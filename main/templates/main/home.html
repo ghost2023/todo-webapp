@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="form-container flex">
+    <form class="flex form" id="form">
+        <input type="text" name="name" id="task-name" placeholder="Add Task">
+        <div class="time flex">
+            <input type="number" name="hour" id="task-hour" placeholder="HH">
+            <p>:</p>
+            <input type="number" name="min" id="task-min" placeholder="MM">
+        </div>
+        <input type="submit" id="sub">
+    </form>
+</div>
+<div id="list-container">
+    <!-- this is where tasks will render -->
+
+</div>
+{% endblock content %}
+
+{% block scripts %}
+
+<script>
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    var csrftoken = getCookie('csrftoken');
+
+    var active = null
+    var list_snapshot = []
+
+    document.querySelector('.form-container').addEventListener(
+        'submit', (e) => {
+            e.preventDefault()
+            var taskTag = document.querySelector('#task-name')
+            var taskName = taskTag.value
+            var taskHour = document.querySelector('#task-hour')
+            var taskMin = document.querySelector('#task-min')
+            var duration = `${(taskHour.value == '') ? '00' : taskHour.value}:${(taskMin.value == '') ? '00' : taskMin.value}:00`
+
+
+            if (active != null) {
+                slug = active.replace(/^\s+|\s+$/g, '').toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+                url = `http://127.0.0.1:8000/api/task-update/${slug}/`
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ "name": taskName, "duration": duration })
+                }
+                ).then(function (response) {
+                    console.log(response)
+                })
+
+
+            }
+            else {
+                url = 'http://127.0.0.1:8000/api/create-task/'
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ "name": taskName, "duration": duration })
+                }
+                ).then(function (response) {
+                    console.log(response)
+
+                })
+
+            }
+            addItem(taskName, duration)
+            taskTag.value = ''
+            taskHour.value = ''
+            taskMin.value = ''
+        }
+    );
+
+    buildList();
+
+    function addItem(taskName, duration, isCompleted = false) {
+        var list = document.querySelector('#list-container')
+        var name = `<span class="title"> ${taskName}</span>`
+        var time = duration.slice((duration[0] == '0') ? 1 : 0, -3)
+
+
+        var item = document.createElement('div')
+        item.classList.add("item", "flex");
+        if (isCompleted == true) {
+            item.classList.add("completed");
+        }
+        item.innerHTML = `${name}<p>${time}</p>`
+
+        var editBtn = document.createElement('button')
+        editBtn.classList.add("editbtn")
+        editBtn.innerText = 'Edit'
+        var deleteBtn = document.createElement('button')
+        deleteBtn.classList.add("deletebtn")
+        deleteBtn.innerText = 'Delete'
+
+        item.append(editBtn)
+        item.append(deleteBtn)
+
+        item.addEventListener('click', (e) => {
+            if (e.target == editBtn) {
+                editItem(item, taskName, time)
+            }
+            else if (e.target == deleteBtn) {
+                deleteItem(item, taskName)
+            }
+            else {
+                finishTask(item, taskName)
+            }
+        })
+
+        list.append(item)
+    }
+
+    function buildList() {
+
+        var url = 'http://127.0.0.1:8000/api/task-list/'
+
+        fetch(url).then((resp) => resp.json()).then((data) => {
+
+            for (var i in data) {
+                addItem(data[i].name, data[i].duration, data[i].completed)
+            }
+        })
+    }
+
+    function finishTask(item, name) {
+        item.classList.toggle('completed')
+        slug = name.replace(/^\s+|\s+$/g, '').toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+        url = 'http://127.0.0.1:8000/api/complete-task/' + slug + '/'
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({})
+        }
+        ).then(function (response) {
+            console.log(response)
+        })
+    }
+
+    function editItem(item, name, time) {
+        active = name
+        document.getElementById('task-name').value = name
+        document.getElementById('task-hour').value = time.split(':')[0]
+        document.getElementById('task-min').value = time.split(':')[1]
+        item.remove()
+    }
+
+    function deleteItem(item, name) {
+        slug = name.replace(/^\s+|\s+$/g, '').toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+        url = 'http://127.0.0.1:8000/api/task-delete/' + slug + '/'
+        fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'Content-type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({})
+        }
+        ).then(function (response) {
+            console.log(response)
+        })
+        item.remove()
+    }
+
+</script>
+
+{% endblock scripts %}
