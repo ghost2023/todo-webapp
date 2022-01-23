@@ -54,7 +54,7 @@
 
             if (active != null) {
                 slug = active.replace(/^\s+|\s+$/g, '').toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
-                url = `http://127.0.0.1:8000/api/task-update/${slug}/`
+                url = `http://${window.location.host}/api/task-update/${slug}/`
                 fetch(url, {
                     method: 'POST',
                     headers: {
@@ -70,7 +70,7 @@
 
             }
             else {
-                url = 'http://127.0.0.1:8000/api/create-task/'
+                url = `http://${window.location.host}/api/create-task/`
                 fetch(url, {
                     method: 'POST',
                     headers: {
@@ -134,7 +134,7 @@
 
     function buildList() {
 
-        var url = 'http://127.0.0.1:8000/api/task-list/'
+        var url = `http://${window.location.host}/api/task-list/`
 
         fetch(url).then((resp) => resp.json()).then((data) => {
 
@@ -147,7 +147,7 @@
     function finishTask(item, name) {
         item.classList.toggle('completed')
         slug = name.replace(/^\s+|\s+$/g, '').toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
-        url = 'http://127.0.0.1:8000/api/complete-task/' + slug + '/'
+        url = `http://${window.location.host}/api/complete-task/` + slug + '/'
         fetch(url, {
             method: 'POST',
             headers: {
@@ -171,7 +171,7 @@
 
     function deleteItem(item, name) {
         slug = name.replace(/^\s+|\s+$/g, '').toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
-        url = 'http://127.0.0.1:8000/api/task-delete/' + slug + '/'
+        url = `http://${window.location.host}/api/task-delete/` + slug + '/'
         fetch(url, {
             method: 'DELETE',
             headers: {
